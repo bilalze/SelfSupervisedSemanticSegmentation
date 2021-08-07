@@ -68,7 +68,8 @@ class DeepLabHeadV3Plus(nn.Module):
         low_level_feature = self.project( feature['low_level'] )
         output_feature = self.aspp(feature['out'])
         output_feature = F.interpolate(output_feature, size=low_level_feature.shape[2:], mode='bilinear', align_corners=False)
-        return self.classifier( torch.cat( [ low_level_feature, output_feature ], dim=1 ) )
+        # return self.classifier( torch.cat( [ low_level_feature, output_feature ], dim=1 ) )
+        return torch.cat( [ low_level_feature, output_feature ], dim=1 ) 
     
     def _init_weight(self):
         for m in self.modules():
@@ -107,15 +108,15 @@ class ProjectionHead(nn.Module):
         super(ProjectionHead, self).__init__()
 
         self.cnn1 = nn.Sequential(
-            nn.Conv2d(256,256,1,stride=1),
+            nn.Conv2d(304,256,1,stride=1),
             # nn.BatchNorm2d(256),
             nn.ReLU(inplace=True),
             nn.Conv2d(256,256,1,stride=1),
             # nn.BatchNorm2d(256),
             nn.ReLU(inplace=True),
             nn.Conv2d(256,256,1,stride=1),
-            UnitNormalizationLayer()
-            # nn.InstanceNorm2d(256)
+            # UnitNormalizationLayer2()
+            nn.InstanceNorm2d(256)
             # nn.LayerNorm(129,129)
             # nn.BatchNorm2d(256)
         )
@@ -138,6 +139,26 @@ class UnitNormalizationLayer(nn.Module):
 
     def normalization(self,x):
           return (x-x.mean()/x.std())
+
+    def forward(self, feature):
+        return self.normalization(feature)
+
+    # def _init_weight(self):
+    #     for m in self.modules():
+    #         if isinstance(m, nn.Conv2d):
+    #             nn.init.kaiming_normal_(m.weight)
+    #         elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
+    #             nn.init.constant_(m.weight, 1)
+    #             nn.init.constant_(m.bias, 0)
+
+class UnitNormalizationLayer2(nn.Module):
+    def __init__(self,):
+        super(UnitNormalizationLayer2, self).__init__()
+
+    def normalization(self,vector):
+      nor=torch.norm(vector)
+      normalised=vector/nor
+      return normalised
 
     def forward(self, feature):
         return self.normalization(feature)
