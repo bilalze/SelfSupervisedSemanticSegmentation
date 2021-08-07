@@ -33,7 +33,7 @@ class _SelfLearningModel(nn.Module):
         features = self.backbone(x)
         x = self.classifier(features)
         x=self.projection_head(x)
-        x = F.interpolate(x, size=[22,22], mode='bilinear', align_corners=False)
+        x = F.interpolate(x, size=[65,65], mode='bilinear', align_corners=False)
         # x = F.interpolate(x, size=input_shape, mode='bilinear', align_corners=False)
         return x
 
@@ -127,9 +127,13 @@ class WithinImageLoss(torch.nn.Module):
         # euclidian distance
         # x0=self.normalization(x0)
         # x1=self.normalization(x1)
-        N1=(1/484)
+        N1=(1/4225)
         N21=torch.count_nonzero(x1o)
-        N20=484-N21
+        N20=4225-N21
+        # if N21.item() != 0:
+        #   N1=1/N21.item()
+        # else:
+        #   N1=1
         # N20=sum([i.count(0) for i in x1o])
         # N21=sum([i.count(1) for i in x1o])
         # for p in range(len(x0o)):
@@ -138,35 +142,23 @@ class WithinImageLoss(torch.nn.Module):
         # print(x0.shape)
         # print(x0)
         # return
-        for _,px,py in np.ndindex(x0o.shape):
+        for px,py in np.ndindex(x0o[0].shape):
             if x0o[0,px,py]==0:
                 N2=1/N20
+                # pass
             else:
-                N2=1/N21
-            
-            # print('done0')
-            # for _,qx,qy in np.ndindex(x1o.shape):
-                # es.append(exp(x0[0,px,py]*x1[0,qx,qy]/self.temp))
-                # print('yes')
-            # targets = x1.view(-1)
-            # print(torch.reshape(x0[:,px,py],(256,1,1)).shape)
-            # tt=torch.mul(x1,torch.reshape(x0[:,px,py],(256,1,1)))
-            # print(x1.shape)
+              N2=1/N21
+
             tt=torch.tensordot(x1,x0[:,px,py],([0], [0]))
-            # print(tt[0,0])
-            # tt2=torch.dot(x1[:,0,0],x0[:,px,py])
-            # print(tt2)
-            # print(tt2.shape)
-            # print(tt.max())
             d=(x0o[0,px,py]==x1o)
             tt2=torch.masked_select(tt, d)
-            es = torch.exp(tt2/self.temp)
-            # print(es)
+            es = tt2/self.temp
+            # print(tt2.shape)
             # print(es.shape)
             # esum=torch.sum(es)
             esum2=torch.logsumexp(tt/self.temp,[0,1])
             # esum3=torch.log(esum)
-            # print(esum)
+            # print(esum2)
             # sum2=0
             # counter=0
             # return
@@ -176,7 +168,7 @@ class WithinImageLoss(torch.nn.Module):
             # print(es.shape)
             # print(torch.masked_select(es, d).shape)
             # return
-            ab=torch.log(es)-esum2
+            ab=es-esum2
             sum2=torch.sum(ab)
             # print(sum2)
 
@@ -192,7 +184,8 @@ class WithinImageLoss(torch.nn.Module):
             # print(sum2)
             loss+=N2*sum2
             if torch.isnan(loss) or torch.isinf(loss):
-                print('stop')
+                print(torch.max(tt))
+                print(loss)
             # print(torch.cuda.memory_summary())
             # del sum2
             del es
@@ -236,7 +229,7 @@ class WithinImageLoss1(torch.nn.Module):
         # print(x0.shape)
         # print(x0)
         # return
-        for _,px,py in np.ndindex(x0o.shape):
+        for px,py in np.ndindex(x0o[0].shape):
             if x0o[0,px,py]==0:
                 pass
             else:
@@ -282,7 +275,7 @@ class WithinImageLoss1(torch.nn.Module):
             # print(sum2)
               loss+=N2*sum2
               if torch.isnan(loss) or torch.isinf(loss):
-                print('stop')
+                print(loss)
             # print(torch.cuda.memory_summary())
             # del sum2
               del es
@@ -290,6 +283,6 @@ class WithinImageLoss1(torch.nn.Module):
               torch.cuda.empty_cache()
 
         loss=-N1*loss 
-        print(loss)
+        # print(loss)
         return loss
 
