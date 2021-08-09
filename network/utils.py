@@ -19,7 +19,33 @@ from math import exp,log
 #          x = F.interpolate(x, size=input_shape, mode='bilinear', align_corners=False)
 #         return x
 
+class Identity(nn.Module):
+    def __init__(self):
+        super(Identity, self).__init__()
+        
+    def forward(self, x):
+        return x
 
+class _SelfLearningModel2(nn.Module):
+    def __init__(self, model, classifier):
+        super(_SelfLearningModel2, self).__init__()
+        self.model = model
+        self.model.projection_head=Identity()
+        self.classifier = classifier
+        # self.projection_head=projection_head
+        
+    def forward_once(self, x):
+        input_shape = x.shape[-2:]
+        features = self.model(x)
+        x = self.classifier(features)
+        # x=self.projection_head(x)
+        # x = F.interpolate(x, size=[22,22], mode='bilinear', align_corners=False)
+        x = F.interpolate(x, size=input_shape, mode='bilinear', align_corners=False)
+        return x
+    def forward(self, input1):
+        # forward pass of input 1
+        output1 = self.forward_once(input1)
+        return output1
 
 class _SelfLearningModel(nn.Module):
     def __init__(self, backbone, classifier,projection_head):
@@ -33,7 +59,7 @@ class _SelfLearningModel(nn.Module):
         features = self.backbone(x)
         x = self.classifier(features)
         x=self.projection_head(x)
-        x = F.interpolate(x, size=[65,65], mode='bilinear', align_corners=False)
+        # x = F.interpolate(x, size=[65,65], mode='bilinear', align_corners=False)
         # x = F.interpolate(x, size=input_shape, mode='bilinear', align_corners=False)
         return x
 
