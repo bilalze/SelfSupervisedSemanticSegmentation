@@ -68,8 +68,8 @@ class DeepLabHeadV3Plus(nn.Module):
         low_level_feature = self.project( feature['low_level'] )
         output_feature = self.aspp(feature['out'])
         output_feature = F.interpolate(output_feature, size=low_level_feature.shape[2:], mode='bilinear', align_corners=False)
-        # return self.classifier( torch.cat( [ low_level_feature, output_feature ], dim=1 ) )
-        return torch.cat( [ low_level_feature, output_feature ], dim=1 ) 
+        return self.classifier( torch.cat( [ low_level_feature, output_feature ], dim=1 ) )
+#         return torch.cat( [ low_level_feature, output_feature ], dim=1 ) 
     
     def _init_weight(self):
         for m in self.modules():
@@ -108,11 +108,11 @@ class ProjectionHead(nn.Module):
         super(ProjectionHead, self).__init__()
 
         self.cnn1 = nn.Sequential(
-            nn.Conv2d(304,256,1,stride=1),
-            # nn.BatchNorm2d(256),
+            nn.Conv2d(256,256,1,stride=1),
+            nn.BatchNorm2d(256),
             nn.ReLU(inplace=True),
             nn.Conv2d(256,256,1,stride=1),
-            # nn.BatchNorm2d(256),
+            nn.BatchNorm2d(256),
             nn.ReLU(inplace=True),
             nn.Conv2d(256,256,1,stride=1),
             # UnitNormalizationLayer2()
