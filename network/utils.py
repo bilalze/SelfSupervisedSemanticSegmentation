@@ -19,7 +19,11 @@ from math import exp,log
 #          x = F.interpolate(x, size=input_shape, mode='bilinear', align_corners=False)
 #         return x
 
-
+class _inter():
+        def inter(self,x):
+                return F.interpolate(x, size=[65,65], mode='bilinear', align_corners=False)
+                
+                
 
 class _SelfLearningModel(nn.Module):
     def __init__(self, backbone, classifier,projection_head):
@@ -27,13 +31,16 @@ class _SelfLearningModel(nn.Module):
         self.backbone = backbone
         self.classifier = classifier
         self.projection_head=projection_head
+        self.bili=_inter
+        
+        
         
     def forward_once(self, x):
         input_shape = x.shape[-2:]
         features = self.backbone(x)
         x = self.classifier(features)
         x=self.projection_head(x)
-        x = F.interpolate(x, size=[65,65], mode='bilinear', align_corners=False)
+        x = self.bili.inter(x)
         # x = F.interpolate(x, size=input_shape, mode='bilinear', align_corners=False)
         return x
 
